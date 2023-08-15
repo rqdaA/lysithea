@@ -13,7 +13,7 @@ ROOTFS=rootfs.cpio
 SNIPPET_BASE=$HOME/$IAM # https://github.com/smallkirby/snippet
 QEMUSCRIPT=run.sh
 
-readonly QEMUSCRIPT_CANDS=( "run" "start" )
+readonly QEMUSCRIPT_CANDS=("run" "start")
 
 # includes
 source "$(realpath $(dirname $0))/includes/errors"
@@ -25,457 +25,457 @@ source "$(realpath $(dirname $0))/includes/fs"
 source "$(realpath $(dirname $0))/includes/drothea-client"
 
 function init() {
-  echo "[+] initiating pwn workspace..."
+	echo "[+] initiating pwn workspace..."
 
-  local KBASE=$SNIPPET_BASE/assets
-  local TARGETS=("exploit.c exploit.h extract-vmlinux.sh sender.py") # targets under `assets`
+	local KBASE=$IAMDIR/assets
+	local TARGETS=("exploit.c exploit.h extract-vmlinux.sh sender.py") # targets under `assets`
 
-  init_config
+	init_config
 
-  if [ -z "$PLAIN_WORK" ] || [ "$PLAIN_WORK" -ne 1 ]; then
-    # raw copy of assets
-    for target in ${TARGETS[@]}; do
-      if [ -f $target ]; then
-        printf "[-] %s already exists, skipping. \n" "$target"
-      else
-        printf "[.] copying %s\n" "$target"
-        cp "$KBASE/$target" ./ || _error_exit "$OPERATION_FAILED" "copy failed."
-      fi
-    done
+	if [ -z "$PLAIN_WORK" ] || [ "$PLAIN_WORK" -ne 1 ]; then
+		# raw copy of assets
+		for target in "${TARGETS[@]}"; do
+			if [ -f "$target" ]; then
+				printf "[-] %s already exists, skipping. \n" "$target"
+			else
+				printf "[.] copying %s\n" "$target"
+				cp "$KBASE/$target" ./ || _error_exit "$OPERATION_FAILED" "copy failed."
+			fi
+		done
 
-    # copy Drothea
-    local DROTHEA=$SNIPPET_BASE/drothea
-    if [ -f drothea ]; then
-      echo "[-] drothea already exists, skipping."
-    else
-      echo "[.] copying drothea"
-      cp "$DROTHEA/drothea" ./ || _error_exit "$OPERATION_FAILED" "copy failed"
-    fi
+		# copy Drothea
+		local DROTHEA=$IAMDIR/drothea
+		if [ -f drothea ]; then
+			echo "[-] drothea already exists, skipping."
+		else
+			echo "[.] copying drothea"
+			cp "$DROTHEA/drothea" ./ || _error_exit "$OPERATION_FAILED" "copy failed"
+		fi
 
-    # compile Ingrit and copy
-    if [ -f ingrid ]; then
-      echo "[.] ingrid already exists, skipping"
-    else
-      echo "[.] compiling and copying ingrid"
-      local INGRID=$SNIPPET_BASE/drothea/ingrid
-      make -C "$INGRID" || _error_exit "$COMPILE_ERROR" "failed to build Ingrid"
-      cp "$INGRID/ingrid" ./ || _error_exit "$OPERATION_FAILED" "copy failed"
-    fi
+		# compile Ingrit and copy
+		if [ -f ingrid ]; then
+			echo "[.] ingrid already exists, skipping"
+		else
+			echo "[.] compiling and copying ingrid"
+			local INGRID=$IAMDIR/drothea/ingrid
+			make -C "$INGRID" || _error_exit "$COMPILE_ERROR" "failed to build Ingrid"
+			cp "$INGRID/ingrid" ./ || _error_exit "$OPERATION_FAILED" "copy failed"
+		fi
 
-    # copy QEMU run script
-    local qemu_candidates
-    for word in "${QEMUSCRIPT_CANDS[@]}"; do
-      readarray -t tmp_cands < <(find . -maxdepth 1 -type f -name "$word*.*" | grep -v dev)
-      qemu_candidates+=( "${tmp_cands[@]}" )
-    done
-    if [ "${#qemu_candidates[@]}" -ge 1 ]; then
-      local qemu_runscript="${qemu_candidates[0]}"
-      QEMUSCRIPT="$qemu_runscript".dev
-      if ! [ -f "$QEMUSCRIPT" ]; then
-        printf "[+] found %d QEMU run-script candidates: %s\n" "${#qemu_candidates[@]}" "${qemu_candidates[*]}"
-        printf "[+] copying %s -> %s\n" "$qemu_runscript" "$QEMUSCRIPT"
-        cp "$qemu_runscript" "$QEMUSCRIPT"
+		# copy QEMU run script
+		local qemu_candidates
+		for word in "${QEMUSCRIPT_CANDS[@]}"; do
+			readarray -t tmp_cands < <(find . -maxdepth 1 -type f -name "$word*.*" | grep -v dev)
+			qemu_candidates+=("${tmp_cands[@]}")
+		done
+		if [ "${#qemu_candidates[@]}" -ge 1 ]; then
+			local qemu_runscript="${qemu_candidates[0]}"
+			QEMUSCRIPT="$qemu_runscript".dev
+			if ! [ -f "$QEMUSCRIPT" ]; then
+				printf "[+] found %d QEMU run-script candidates: %s\n" "${#qemu_candidates[@]}" "${qemu_candidates[*]}"
+				printf "[+] copying %s -> %s\n" "$qemu_runscript" "$QEMUSCRIPT"
+				cp "$qemu_runscript" "$QEMUSCRIPT"
 
-        vprintf "[.] setting config: %s=%s" "QEMUSCRIPT" "$QEMUSCRIPT"
-        write_config "QEMUSCRIPT" "$QEMUSCRIPT"
-      fi
-    fi
+				vprintf "[.] setting config: %s=%s" "QEMUSCRIPT" "$QEMUSCRIPT"
+				write_config "QEMUSCRIPT" "$QEMUSCRIPT"
+			fi
+		fi
 
-    init_git
-  else # if [ "$PLAIN_WORK" -ne 1 ]
-    write_config "PLAIN_WORK" "1"
-    write_config "EXPLOIT_DONT_LOG" "1"
-  fi
+		init_git
+	else # if [ "$PLAIN_WORK" -ne 1 ]
+		write_config "PLAIN_WORK" "1"
+		write_config "EXPLOIT_DONT_LOG" "1"
+	fi
 
-  return 0
+	return 0
 }
 
 function clean() {
-  local CLEAN_TARGET=( "drothea" "ingrid" "sender.py"  ".gitignore" ".git" "$QEMUSCRIPT" )
-  if [ -n "$CLEAN_ALL" ]; then
-    CLEAN_TARGET+=( ".lysithea.conf" ".lysithea.log" "extracted" )
-  fi
-  for target in "${CLEAN_TARGET[@]}"; do
-    rm -rf "$target"
-  done
+	local CLEAN_TARGET=("drothea" "ingrid" "sender.py" ".gitignore" ".git" "$QEMUSCRIPT")
+	if [ -n "$CLEAN_ALL" ]; then
+		CLEAN_TARGET+=(".lysithea.conf" ".lysithea.log" "extracted")
+	fi
+	for target in "${CLEAN_TARGET[@]}"; do
+		rm -rf "$target"
+	done
 }
 
 function _set_command() {
-  if [ -n "$COMMAND" ]; then
-    _error_exit $INVALID_ARGS "multiple commands are specified: '%s' and '%s'" "$COMMAND" "$1"
-  else
-    COMMAND=$1
-    return 0
-  fi
+	if [ -n "$COMMAND" ]; then
+		_error_exit $INVALID_ARGS "multiple commands are specified: '%s' and '%s'" "$COMMAND" "$1"
+	else
+		COMMAND=$1
+		return 0
+	fi
 }
 
 function log_parse_arguments() {
-  local num_processed=0
-  while [[ $# -gt 0 ]]; do
-    key="$1"
+	local num_processed=0
+	while [[ $# -gt 0 ]]; do
+		key="$1"
 
-    case $key in
-      #* log
-      --all)
-        SHOW_ALL_LOG=1
-        shift
-        num_processed=$((num_processed+1))
-        ;;
-      #* log
-      --no-pager)
-        SHOW_LOG_NO_PAGER=1
-        shift
-        num_processed=$((num_processed+1))
-        ;;
-      *)
-        if [[ "$1" =~ ^[0-9]+$ ]]; then
-          LOG_TARGET_INDEX="$1"
-          shift
-          num_processed=$((num_processed+1))
-        else
-          break
-        fi
-        ;;
-    esac
-  done
+		case $key in
+		#* log
+		--all)
+			SHOW_ALL_LOG=1
+			shift
+			num_processed=$((num_processed + 1))
+			;;
+		#* log
+		--no-pager)
+			SHOW_LOG_NO_PAGER=1
+			shift
+			num_processed=$((num_processed + 1))
+			;;
+		*)
+			if [[ "$1" =~ ^[0-9]+$ ]]; then
+				LOG_TARGET_INDEX="$1"
+				shift
+				num_processed=$((num_processed + 1))
+			else
+				break
+			fi
+			;;
+		esac
+	done
 
-  NUM_ARGUMENTS_PROCESSED=$num_processed
+	NUM_ARGUMENTS_PROCESSED=$num_processed
 }
 
 function remote_parse_arguments() {
-  local num_processed=0
-  while [[ $# -gt 0 ]]; do
-    key="$1"
+	local num_processed=0
+	while [[ $# -gt 0 ]]; do
+		key="$1"
 
-    case $key in
-      #* remote
-      -p | --port)
-        shift
-        EXPLOIT_PORT="$1"
-        write_config "EXPLOIT_PORT" "$EXPLOIT_PORT"
-        shift
-        num_processed=$((num_processed+2))
-        ;;
-      #* remote
-      -H | --host)
-        shift
-        EXPLOIT_HOST="$1"
-        write_config "EXPLOIT_HOST" "$EXPLOIT_HOST"
-        shift
-        num_processed=$((num_processed+2))
-        ;;
-      #* remote
-      --nobuild)
-        EXPLOIT_SKIP_BUILD=1
-        shift
-        num_processed=$((num_processed+1))
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
+		case $key in
+		#* remote
+		-p | --port)
+			shift
+			EXPLOIT_PORT="$1"
+			write_config "EXPLOIT_PORT" "$EXPLOIT_PORT"
+			shift
+			num_processed=$((num_processed + 2))
+			;;
+		#* remote
+		-H | --host)
+			shift
+			EXPLOIT_HOST="$1"
+			write_config "EXPLOIT_HOST" "$EXPLOIT_HOST"
+			shift
+			num_processed=$((num_processed + 2))
+			;;
+		#* remote
+		--nobuild)
+			EXPLOIT_SKIP_BUILD=1
+			shift
+			num_processed=$((num_processed + 1))
+			;;
+		*)
+			break
+			;;
+		esac
+	done
 
-  NUM_ARGUMENTS_PROCESSED=$num_processed
+	NUM_ARGUMENTS_PROCESSED=$num_processed
 }
 
 function clean_parse_arguments() {
-  local num_processed=0
-  while [[ $# -gt 0 ]]; do
-    key="$1"
+	local num_processed=0
+	while [[ $# -gt 0 ]]; do
+		key="$1"
 
-    case $key in
-      #* clean
-      -a | --all)
-        CLEAN_ALL="1"
-        shift
-        num_processed=$((num_processed+1))
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
+		case $key in
+		#* clean
+		-a | --all)
+			CLEAN_ALL="1"
+			shift
+			num_processed=$((num_processed + 1))
+			;;
+		*)
+			break
+			;;
+		esac
+	done
 
-  NUM_ARGUMENTS_PROCESSED=$num_processed
+	NUM_ARGUMENTS_PROCESSED=$num_processed
 }
 
 function parse_arguments() {
-  while [[ $# -gt 0 ]]; do
-    key="$1"
+	while [[ $# -gt 0 ]]; do
+		key="$1"
 
-    case $key in
-    # generic options
+		case $key in
+		# generic options
 
-    #* general
-    -h | --help | help)
-      HELP=1
-      return 0
-      ;;
-    #* general
-    -v | --verbose)
-      VERBOSE=1
-      shift
-      ;;
-    #* general
-    -f | --force)
-      FORCE=1
-      shift
-      ;;
-    #* general
-    --nolog)
-      EXPLOIT_DONT_LOG=1
-      shift
-      ;;
-    #* general
-    --plain)
-      PLAIN_WORK=1
-      shift
-      ;;
-    # commands
-    version)
-      SHOW_VERSION=1
-      return 0
-    ;;
-    init)
-      _set_command init
-      shift
-      ;;
-    extract)
-      _set_command extract
-      shift
-      ;;
-    build)
-      _set_command build
-      shift
-      ;;
-    compress)
-      _set_command compress
-      shift
-      ;;
-    error | -e)
-      _set_command error
-      if [ $# -gt 1 ]; then
-        shift
-        ERROR_ASKED=$1
-      fi
-      shift
-      ;;
-    #@ local
-    #@ run QEMU script locally
-    exploit | local)
-      _set_command exploit
-      shift
-      EXPLOIT_LOCAL=1
+		#* general
+		-h | --help | help)
+			HELP=1
+			return 0
+			;;
+		#* general
+		-v | --verbose)
+			VERBOSE=1
+			shift
+			;;
+		#* general
+		-f | --force)
+			FORCE=1
+			shift
+			;;
+		#* general
+		--nolog)
+			EXPLOIT_DONT_LOG=1
+			shift
+			;;
+		#* general
+		--plain)
+			PLAIN_WORK=1
+			shift
+			;;
+		# commands
+		version)
+			SHOW_VERSION=1
+			return 0
+			;;
+		init)
+			_set_command init
+			shift
+			;;
+		extract)
+			_set_command extract
+			shift
+			;;
+		build)
+			_set_command build
+			shift
+			;;
+		compress)
+			_set_command compress
+			shift
+			;;
+		error | -e)
+			_set_command error
+			if [ $# -gt 1 ]; then
+				shift
+				ERROR_ASKED=$1
+			fi
+			shift
+			;;
+		#@ local
+		#@ run QEMU script locally
+		exploit | local)
+			_set_command exploit
+			shift
+			EXPLOIT_LOCAL=1
 
-      NUM_ARGUMENTS_PROCESSED=0
-      remote_parse_arguments "$@"
-      shift "$NUM_ARGUMENTS_PROCESSED"
-      ;;
-    #@ remote
-    #@ run exploit on remote host
-    remote)
-      _set_command exploit
-      shift
-      NUM_ARGUMENTS_PROCESSED=0
-      remote_parse_arguments "$@"
-      shift "$NUM_ARGUMENTS_PROCESSED"
-      ;;
-    logs)
-      _set_command logs
-      shift
-    ;;
-    log)
-      _set_command log
-      shift
-      NUM_ARGUMENTS_PROCESSED=0
-      log_parse_arguments "$@"
-      shift "$NUM_ARGUMENTS_PROCESSED"
-    ;;
-    fetch)
-      _set_command fetch
-      shift
-      NUM_ARGUMENTS_PROCESSED=0
-      log_parse_arguments "$@"
-      shift "$NUM_ARGUMENTS_PROCESSED"
-    ;;
-    drothea)
-      _set_command drothea
-      shift
-    ;;
-    config)
-      _set_command config
-      shift
-    ;;
-    memo)
-      _set_command memo
-      shift
-      MEMO_CONTENT=$(printf "%s " "$@")
-      break
-    ;;
-    clean)
-      _set_command clean
-      shift
-      NUM_ARGUMENTS_PROCESSED=0
-      clean_parse_arguments "$@"
-      shift "$NUM_ARGUMENTS_PROCESSED"
-      break
-    ;;
-    # unknown
-    *)
-      _error_exit $INVALID_ARGS "unknown command: %s" "$1"
-      ;;
-    esac
-  done
+			NUM_ARGUMENTS_PROCESSED=0
+			remote_parse_arguments "$@"
+			shift "$NUM_ARGUMENTS_PROCESSED"
+			;;
+		#@ remote
+		#@ run exploit on remote host
+		remote)
+			_set_command exploit
+			shift
+			NUM_ARGUMENTS_PROCESSED=0
+			remote_parse_arguments "$@"
+			shift "$NUM_ARGUMENTS_PROCESSED"
+			;;
+		logs)
+			_set_command logs
+			shift
+			;;
+		log)
+			_set_command log
+			shift
+			NUM_ARGUMENTS_PROCESSED=0
+			log_parse_arguments "$@"
+			shift "$NUM_ARGUMENTS_PROCESSED"
+			;;
+		fetch)
+			_set_command fetch
+			shift
+			NUM_ARGUMENTS_PROCESSED=0
+			log_parse_arguments "$@"
+			shift "$NUM_ARGUMENTS_PROCESSED"
+			;;
+		drothea)
+			_set_command drothea
+			shift
+			;;
+		config)
+			_set_command config
+			shift
+			;;
+		memo)
+			_set_command memo
+			shift
+			MEMO_CONTENT=$(printf "%s " "$@")
+			break
+			;;
+		clean)
+			_set_command clean
+			shift
+			NUM_ARGUMENTS_PROCESSED=0
+			clean_parse_arguments "$@"
+			shift "$NUM_ARGUMENTS_PROCESSED"
+			break
+			;;
+		# unknown
+		*)
+			_error_exit $INVALID_ARGS "unknown command: %s" "$1"
+			;;
+		esac
+	done
 
-  if [ -z "$COMMAND" ]; then
-    _error_exit $INVALID_ARGS "command not specified"
-  fi
+	if [ -z "$COMMAND" ]; then
+		_error_exit $INVALID_ARGS "command not specified"
+	fi
 }
 
 function version() {
-  printf "Lysithea v%s\n" "$VERSION"
+	printf "Lysithea v%s\n" "$VERSION"
 }
 
 function do_usage() {
-  local command_name=""
-  local command_description=""
-  while IFS= read -r line; do
-    line="$(echo $line | xargs)"
-    if [[ "$line" == \#@* ]]; then
-      if [ -z "$command_name" ]; then
-        command_name="${line:3}"
-        continue
-      else
-        command_description="${line:3}"
-        continue
-      fi # endif [ -z "$command_name" ]
-    else # else[[ "$line" == \#@* ]]
-      if [ -z "$command_name" ]; then
-        continue
-      fi
-      if [ -z "$command_description" ]; then
-        _error_exit "$UNKNOWN_ERROR" "Failed to generate usage text."
-      fi
-      printf "  %-15s\t\t: %s\n" "$command_name" "$command_description"
-      command_name=""
-      command_description=""
-    fi # end else [[ "$line" == \#@* ]]
-  done < "$IAMABS"
+	local command_name=""
+	local command_description=""
+	while IFS= read -r line; do
+		line="$(echo $line | xargs)"
+		if [[ "$line" == \#@* ]]; then
+			if [ -z "$command_name" ]; then
+				command_name="${line:3}"
+				continue
+			else
+				command_description="${line:3}"
+				continue
+			fi  # endif [ -z "$command_name" ]
+		else # else[[ "$line" == \#@* ]]
+			if [ -z "$command_name" ]; then
+				continue
+			fi
+			if [ -z "$command_description" ]; then
+				_error_exit "$UNKNOWN_ERROR" "Failed to generate usage text."
+			fi
+			printf "  %-15s\t\t: %s\n" "$command_name" "$command_description"
+			command_name=""
+			command_description=""
+		fi # end else [[ "$line" == \#@* ]]
+	done <"$IAMABS"
 }
 
 function usage() {
-  version
-  echo ""
-  echo "Usage:"
-  do_usage
+	version
+	echo ""
+	echo "Usage:"
+	do_usage
 }
 
 function main() {
-  set_all_configs
-  local argv="$@"
-  parse_arguments $argv
+	set_all_configs
+	local argv="$@"
+	parse_arguments $argv
 
-  #@ help
-  #@ show this help
-  if [ -n "$HELP" ]; then
-    usage
-    exit 0
-  fi
+	#@ help
+	#@ show this help
+	if [ -n "$HELP" ]; then
+		usage
+		exit 0
+	fi
 
-  #@ version
-  #@ show version info
-  if [ -n "$SHOW_VERSION" ]; then
-    version
-    exit 0
-  fi
+	#@ version
+	#@ show version info
+	if [ -n "$SHOW_VERSION" ]; then
+		version
+		exit 0
+	fi
 
-  case $COMMAND in
-  #@ init
-  #@ init the pwn workspace
-  init)
-    init
-    ;;
-  #@ extract
-  #@ extract filesystem
-  extract)
-    extract_filesystem $FORCE
-    ;;
-  #@ build
-  #@ compile exploit for local usage
-  build)
-    compile_exploit
-    ;;
-  #@ compress
-  #@ compress filesystem
-  compress)
-    compress_filesystem
-    ;;
-  #@ error
-  #@ show error description
-  error)
-    if [ -z "$ERROR_ASKED" ]; then
-      echo "usage: lysithea error <ERROR NUMBER>"
-    else
-      error2str $ERROR_ASKED
-    fi
-    ;;
-  #@ exploit
-  #@ synonym of 'local'
-  exploit)
-    exploit
-    ;;
-  #@ logs
-  #@ show list of logs
-  logs)
-    list_logs
-    ;;
-  #@ log
-  #@ show QEMU log of given time
-  log)
-    if [ -n "$SHOW_ALL_LOG" ]; then
-      get_log_all
-    else
-      if [ -z "$LOG_TARGET_INDEX" ]; then
-        _error_exit "$INVALID_ARGS" "Specify log index, or use --all to show all logs."
-      fi
-      get_log_single "$LOG_TARGET_INDEX"
-    fi
-    ;;
-  #@ fetch
-  #@ fetch given time of exploit
-  fetch)
-    if [ -z "$LOG_TARGET_INDEX" ]; then
-      _error_exit "$INVALID_ARGS" "Specify log index"
-    fi
-    get_exploit "$LOG_TARGET_INDEX"
-    ;;
-  #@ drothea
-  #@ run kernel configuration checker in QEMU
-  drothea)
-    run_drothea_in_qemu
-    ;;
-  #@ config
-  #@ configure default options interactively
-  config)
-    configure_interactive
-    ;;
-  #@ memo
-  #@ leave memo for latest exploit log
-  memo)
-    write_memo "$MEMO_CONTENT"
-    ;;
-  #@ clean
-  #@ clean current directory
-  clean)
-    clean
-    ;;
-  *)
-    _error_exit $UNKNOWN_ERROR "command not found."
-    ;;
-  esac
+	case $COMMAND in
+	#@ init
+	#@ init the pwn workspace
+	init)
+		init
+		;;
+	#@ extract
+	#@ extract filesystem
+	extract)
+		extract_filesystem $FORCE
+		;;
+	#@ build
+	#@ compile exploit for local usage
+	build)
+		compile_exploit
+		;;
+	#@ compress
+	#@ compress filesystem
+	compress)
+		compress_filesystem
+		;;
+	#@ error
+	#@ show error description
+	error)
+		if [ -z "$ERROR_ASKED" ]; then
+			echo "usage: lysithea error <ERROR NUMBER>"
+		else
+			error2str $ERROR_ASKED
+		fi
+		;;
+	#@ exploit
+	#@ synonym of 'local'
+	exploit)
+		exploit
+		;;
+	#@ logs
+	#@ show list of logs
+	logs)
+		list_logs
+		;;
+	#@ log
+	#@ show QEMU log of given time
+	log)
+		if [ -n "$SHOW_ALL_LOG" ]; then
+			get_log_all
+		else
+			if [ -z "$LOG_TARGET_INDEX" ]; then
+				_error_exit "$INVALID_ARGS" "Specify log index, or use --all to show all logs."
+			fi
+			get_log_single "$LOG_TARGET_INDEX"
+		fi
+		;;
+	#@ fetch
+	#@ fetch given time of exploit
+	fetch)
+		if [ -z "$LOG_TARGET_INDEX" ]; then
+			_error_exit "$INVALID_ARGS" "Specify log index"
+		fi
+		get_exploit "$LOG_TARGET_INDEX"
+		;;
+	#@ drothea
+	#@ run kernel configuration checker in QEMU
+	drothea)
+		run_drothea_in_qemu
+		;;
+	#@ config
+	#@ configure default options interactively
+	config)
+		configure_interactive
+		;;
+	#@ memo
+	#@ leave memo for latest exploit log
+	memo)
+		write_memo "$MEMO_CONTENT"
+		;;
+	#@ clean
+	#@ clean current directory
+	clean)
+		clean
+		;;
+	*)
+		_error_exit $UNKNOWN_ERROR "command not found."
+		;;
+	esac
 
-  exit 0
+	exit 0
 }
 
 main "$@"
