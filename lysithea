@@ -28,7 +28,7 @@ function init() {
 	echo "[+] initiating pwn workspace..."
 
 	local KBASE=$IAMDIR/assets
-	local TARGETS=("exploit.c exploit.h extract-vmlinux.sh sender.py") # targets under `assets`
+	local TARGETS=("exploit.c exploit.h extract-vmlinux.sh sender.py neorp++.py") # targets under `assets`
 
 	init_config
 
