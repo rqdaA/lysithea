@@ -77,7 +77,6 @@ function read_config() {
   if [ -z "$tmpvalue" ]; then
     return 0 # not found
   fi
-
   printf -v "$1" "%s" "$tmpvalue"
 }
 
@@ -115,103 +114,103 @@ function _do_configure_interactive() {
 
   read -r -p " ('q' to quit) > " userinput
   case "$userinput" in
-    nolog)
-      local target_config="EXPLOIT_DONT_LOG"
-      read_config "$target_config"
-      if [ -n "$_EXPLOIT_DONT_LOG" ] && [ "$_EXPLOIT_DONT_LOG" -eq 1 ]; then
-        write_config "$target_config" 0
-        echo "[+] set $target_config to 0."
-      else
-        write_config "$target_config" 1
-        echo "[+] set $target_config to 1."
-      fi
+  nolog)
+    local target_config="EXPLOIT_DONT_LOG"
+    read_config "$target_config"
+    if [ -n "$_EXPLOIT_DONT_LOG" ] && [ "$_EXPLOIT_DONT_LOG" -eq 1 ]; then
+      write_config "$target_config" 0
+      echo "[+] set $target_config to 0."
+    else
+      write_config "$target_config" 1
+      echo "[+] set $target_config to 1."
+    fi
     ;;
-    nobuild)
-      local target_config="EXPLOIT_SKIP_BUILD"
-      read_config "$target_config"
-      if [ -n "$EXPLOIT_SKIP_BUILD" ] && [ "$EXPLOIT_SKIP_BUILD" -eq 1 ]; then
-        write_config "$target_config" 0
-        echo "[+] set $target_config to 0."
-      else
-        write_config "$target_config" 1
-        echo "[+] set $target_config to 1."
-      fi
+  nobuild)
+    local target_config="EXPLOIT_SKIP_BUILD"
+    read_config "$target_config"
+    if [ -n "$EXPLOIT_SKIP_BUILD" ] && [ "$EXPLOIT_SKIP_BUILD" -eq 1 ]; then
+      write_config "$target_config" 0
+      echo "[+] set $target_config to 0."
+    else
+      write_config "$target_config" 1
+      echo "[+] set $target_config to 1."
+    fi
     ;;
-    plain)
-      local target_config="PLAIN_WORK"
-      read_config "$target_config"
-      if [ -n "$PLAIN_WORK" ] && [ "$PLAIN_WORK" -eq 1 ]; then
-        write_config "$target_config" 0
-        echo "[+] set $target_config to 0."
-      else
-        write_config "$target_config" 1
-        echo "[+] set $target_config to 1."
-      fi
+  plain)
+    local target_config="PLAIN_WORK"
+    read_config "$target_config"
+    if [ -n "$PLAIN_WORK" ] && [ "$PLAIN_WORK" -eq 1 ]; then
+      write_config "$target_config" 0
+      echo "[+] set $target_config to 0."
+    else
+      write_config "$target_config" 1
+      echo "[+] set $target_config to 1."
+    fi
     ;;
-    exploit=*)
-      local target_config="EXPLOIT"
-      local exploit_name="${userinput#*exploit=}"
-      if [ -z "$exploit_name" ]; then
-        echo "[-] specify exploit name."
-      else
-        write_config "$target_config" "$exploit_name"
-        echo "[+] set $target_config to '$exploit_name'"
-        echo "[+] changing .gitignore target for logging..."
-        add_git_target "$exploit_name".c
-      fi
+  exploit=*)
+    local target_config="EXPLOIT"
+    local exploit_name="${userinput#*exploit=}"
+    if [ -z "$exploit_name" ]; then
+      echo "[-] specify exploit name."
+    else
+      write_config "$target_config" "$exploit_name"
+      echo "[+] set $target_config to '$exploit_name'"
+      echo "[+] changing .gitignore target for logging..."
+      add_git_target "$exploit_name".c
+    fi
     ;;
-    rootfs=*)
-      local target_config="ROOTFS"
-      local rootfs_name="${userinput#*rootfs=}"
-      if [ -z "$rootfs_name" ]; then
-        echo "[-] specify rootfs name."
-      else
-        write_config "$target_config" "$rootfs_name"
-        echo "[+] set $target_config to '$rootfs_name'"
-      fi
+  rootfs=*)
+    local target_config="ROOTFS"
+    local rootfs_name="${userinput#*rootfs=}"
+    if [ -z "$rootfs_name" ]; then
+      echo "[-] specify rootfs name."
+    else
+      write_config "$target_config" "$rootfs_name"
+      echo "[+] set $target_config to '$rootfs_name'"
+    fi
     ;;
-    qemu=*)
-      local target_config="QEMUSCRIPT"
-      local rootfs_name="${userinput#*qemu=}"
-      if [ -z "$rootfs_name" ]; then
-        echo "[-] specify rootfs name."
-      else
-        write_config "$target_config" "$rootfs_name"
-        echo "[+] set $target_config to '$rootfs_name'"
-      fi
+  qemu=*)
+    local target_config="QEMUSCRIPT"
+    local rootfs_name="${userinput#*qemu=}"
+    if [ -z "$rootfs_name" ]; then
+      echo "[-] specify rootfs name."
+    else
+      write_config "$target_config" "$rootfs_name"
+      echo "[+] set $target_config to '$rootfs_name'"
+    fi
     ;;
-    include=*)
-      local target_config="INCLUDE"
-      local includes="${userinput#*include=}"
-      write_config "$target_config" "$includes"
-      echo "[+] set $target_config to '$includes'"
+  include=*)
+    local target_config="INCLUDE"
+    local includes="${userinput#*include=}"
+    write_config "$target_config" "$includes"
+    echo "[+] set $target_config to '$includes'"
     ;;
-    "assets add "*)
-      local target_config="CUSTOM_ASSETS"
-      local assets="${userinput#*"assets add "}"
-      local filename path_to_copy
-      if [[ "$assets" == *":"* ]]; then
-        filename=$(cut -d ':' -f 1 <<<$assets)
-        path_to_copy=$(cut -d ':' -f 2 <<<$assets)
-      else
-        filename="$assets"
-        path_to_copy="/"
-      fi
+  "assets add "*)
+    local target_config="CUSTOM_ASSETS"
+    local assets="${userinput#*"assets add "}"
+    local filename path_to_copy
+    if [[ "$assets" == *":"* ]]; then
+      filename=$(cut -d ':' -f 1 <<<$assets)
+      path_to_copy=$(cut -d ':' -f 2 <<<$assets)
+    else
+      filename="$assets"
+      path_to_copy="/"
+    fi
 
-      read_config "CUSTOM_ASSETS"
-      if [ -z "$CUSTOM_ASSETS" ]; then
-        write_config "$target_config" "$filename:$path_to_copy"
-      else
-        write_config "$target_config" "$CUSTOM_ASSETS $filename:$path_to_copy"
-      fi
-      read_config "CUSTOM_ASSETS"
-      echo "[+] set $target_config to '$CUSTOM_ASSETS'"
+    read_config "CUSTOM_ASSETS"
+    if [ -z "$CUSTOM_ASSETS" ]; then
+      write_config "$target_config" "$filename:$path_to_copy"
+    else
+      write_config "$target_config" "$CUSTOM_ASSETS $filename:$path_to_copy"
+    fi
+    read_config "CUSTOM_ASSETS"
+    echo "[+] set $target_config to '$CUSTOM_ASSETS'"
     ;;
-    q)
-      exit 0
+  q)
+    exit 0
     ;;
-    *)
-      printf "Unknown command: %s\n" "$userinput"
+  *)
+    printf "Unknown command: %s\n" "$userinput"
     ;;
   esac
 }
