@@ -69,15 +69,15 @@ function read_config() {
     _error_exit "$INVALID_ARGS" "read_config() is called with invalid # of args."
   fi
 
-  local tmpvalue
-  tmpvalue=$(find_config $1)
+  local tmpval
+  tmpval=$(find_config $1)
   if [ $? -ne 0 ]; then
     _error_exit "$OPERATION_FAILED" "error while reading configuration file: %s" "$CONFIGFILE"
   fi
-  if [ -z "$tmpvalue" ]; then
+  if [ -z "$tmpval" ]; then
     return 0 # not found
   fi
-  printf -v "$1" "%s" "$tmpvalue"
+  printf -v "$1" "%s" "$tmpval"
 }
 
 function write_config() {

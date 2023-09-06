@@ -98,9 +98,16 @@ function extract_filesystem() {
     local FORCE_EXTRACT=1
   fi
 
-  if ! [ -f $ROOTFS ]; then
-    _error_exit $FILE_NOT_FOUND "filesystem '$ROOTFS' not found."
+  if ! [ -f ${ROOTFS%.gz} ] && ! [ -f ${INITRAMFS%.gz} ]; then
+    _error_exit $FILE_NOT_FOUND "filesystem '$ROOTFS' nor '$INITRAMFS' found."
     return 2
+  elif [ -f "$ROOTFS.gz" ]; then
+    gunzip "$ROOTFS.gz"
+  elif [ -f $INITRAMFS ]; then
+    ROOTFS=$INITRAMFS
+  elif [ -f "$INITRAMFS.gz" ]; then
+    gunzip "$INITRAMFS.gz"
+    ROOTFS=$INITRAMFS
   fi
 
   if [ -d $EXTRACTED ]; then
@@ -186,7 +193,14 @@ function compress_filesystem() {
     return 0
   fi
 
+  if [ -f $INITRAMFS ]; then
+    ROOTFS=$INITRAMFS
+  elif ! [ -f $ROOTFS ]; then
+    _error_exit $FILE_NOT_FOUND "File '$ROOTFS' nor '$INITRAMFS' found"
+  fi
+  
   local filetype=$(check_filesystem_type "$ROOTFS")
+
   if [ $filetype -ne "$FILETYPE_EXT4" ] && [ $filetype -ne "$FILETYPE_QCOW" ]; then
     rm -f $ROOTFS
   fi
@@ -207,7 +221,7 @@ function compress_filesystem() {
   fi
 
   # copy custom assets
-  read_config "CUSTOM_ASSETS"
+  # read_config "CUSTOM_ASSETS"
   if [ -n "$CUSTOM_ASSETS" ]; then
     local assets_array=($CUSTOM_ASSETS)
     for asset in "${assets_array[@]}"; do
@@ -239,7 +253,7 @@ function compress_filesystem() {
     compress_filesystem_qcow
     ;;
   "$FILETYPE_UNKNOWN")
-    _error_exit "$OPERATION_FAILED" "unknown file format of file image: $ROOTFS"
+    _error_exit "$OPERATION_FAILED" "unknown file format of file image: $ROOTFS"ly
     ;;
   "$FILETYPE_ERROR")
     _error_exit "$UNKNOWN_ERROR" "error in function check_filesystem_type()."
