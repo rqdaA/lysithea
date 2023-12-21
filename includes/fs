@@ -98,7 +98,7 @@ function extract_filesystem() {
     local FORCE_EXTRACT=1
   fi
 
-  if ! [ -f ${ROOTFS%.gz} ] && ! [ -f ${INITRAMFS%.gz} ]; then
+  if ! [ -f $ROOTFS ] && ! [ -f $INITRAMFS ] && ! [ -f "$ROOTFS.gz" ] && ! [ -f "$INITRAMFS.gz" ]; then
     _error_exit $FILE_NOT_FOUND "filesystem '$ROOTFS' nor '$INITRAMFS' found."
     return 2
   elif [ -f "$ROOTFS.gz" ]; then
@@ -198,7 +198,7 @@ function compress_filesystem() {
   elif ! [ -f $ROOTFS ]; then
     _error_exit $FILE_NOT_FOUND "File '$ROOTFS' nor '$INITRAMFS' found"
   fi
-  
+
   local filetype=$(check_filesystem_type "$ROOTFS")
 
   if [ $filetype -ne "$FILETYPE_EXT4" ] && [ $filetype -ne "$FILETYPE_QCOW" ]; then
