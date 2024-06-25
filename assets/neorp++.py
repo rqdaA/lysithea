@@ -8,7 +8,7 @@ pareparation:
   - configure RPPP_PATH for your env.
 
 """
-RPPP_PATH = "$HOME/rp/rp-lin-x64"
+RPPP_PATH = "$HOME/me/ctf/tools/rp-lin"
 
 from pwn import *
 import os
