@@ -5,6 +5,7 @@ readonly H_GUARD_FS=1
 source "$(realpath $(dirname $0))/includes/errors"
 source "$(realpath $(dirname $0))/includes/utils"
 
+readonly FILETYPE_EXTS=("cpio" "ext4" "gzip" "qcow")
 readonly FILETYPE_CPIO=1
 readonly FILETYPE_EXT4=2
 readonly FILETYPE_GZIP=3
@@ -98,16 +99,19 @@ function extract_filesystem() {
     local FORCE_EXTRACT=1
   fi
 
-  if ! [ -f $ROOTFS ] && ! [ -f $INITRAMFS ] && ! [ -f "$ROOTFS.gz" ] && ! [ -f "$INITRAMFS.gz" ]; then
-    _error_exit $FILE_NOT_FOUND "filesystem '$ROOTFS' nor '$INITRAMFS' found."
-    return 2
-  elif [ -f "$ROOTFS.gz" ]; then
-    gunzip "$ROOTFS.gz"
-  elif [ -f $INITRAMFS ]; then
-    ROOTFS=$INITRAMFS
-  elif [ -f "$INITRAMFS.gz" ]; then
-    gunzip "$INITRAMFS.gz"
-    ROOTFS=$INITRAMFS
+  local found=0
+  for ext in "${FILETYPE_EXTS[@]}"; do
+    if [ -f "$ROOTFS.$ext" ]; then
+      ROOTFS="$ROOTFS.$ext"
+      found=1
+      break
+    fi
+  done
+
+  if [ $found == 1 ]; then
+    write_config "ROOTFS" $ROOTFS
+  else
+    _error_exit $FILE_NOT_FOUND "rootfs not found"
   fi
 
   if [ -d $EXTRACTED ]; then
@@ -193,11 +197,8 @@ function compress_filesystem() {
     return 0
   fi
 
-  if [ -f $INITRAMFS ]; then
-    ROOTFS=$INITRAMFS
-  elif ! [ -f $ROOTFS ]; then
-    _error_exit $FILE_NOT_FOUND "File '$ROOTFS' nor '$INITRAMFS' found"
-  fi
+  read_config ROOTFS
+  [ -z $ROOTFS ] && _error_exit $FILE_NOT_FOUND "File 'ROOTFS' config not found"
 
   local filetype=$(check_filesystem_type "$ROOTFS")
 

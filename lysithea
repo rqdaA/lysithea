@@ -9,8 +9,8 @@ IAM=$(basename $0)
 IAMABS=$(realpath $0)
 IAMDIR=$(dirname $IAMABS)
 EXTRACTED=extracted
-ROOTFS=rootfs.cpio
-INITRAMFS=initramfs.cpio
+ROOTFS=rootfs
+INITRAMFS=initramfs
 QEMUSCRIPT=run.sh
 
 readonly QEMUSCRIPT_CANDS=("run" "start")
